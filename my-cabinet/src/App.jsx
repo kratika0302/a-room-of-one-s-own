@@ -901,10 +901,13 @@ export default function App() {
   const [themeName, setThemeName] = useState("light");
 
   const P = themeName === "light" ? LIGHT_P : DARK_P;
-  const API_URL = import.meta.env.VITE_API_URL ||
+  const RAW_API_URL = import.meta.env.VITE_API_URL ||
     (window.location.hostname.includes("localhost") || window.location.hostname.includes("127.0.0.1")
       ? "http://localhost:8000"
       : "https://a-room-of-one-s-own.onrender.com");
+
+  // Sanitize API_URL: Remove trailing slash if present
+  const API_URL = RAW_API_URL.endsWith("/") ? RAW_API_URL.slice(0, -1) : RAW_API_URL;
   console.log("Current API_URL:", API_URL);
 
   const fetchEntries = async () => {
