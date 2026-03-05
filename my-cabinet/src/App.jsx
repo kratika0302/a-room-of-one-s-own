@@ -155,7 +155,7 @@ function Tag({ label, bg, color }) {
 // ─── CARDS ────────────────────────────────────────────────────────────────────
 function MovieBookCard({ entry, onClick, compact = false, P }) {
   const m = getSectionMeta(P)[entry.type];
-  const hasImg = entry.coverImg && entry.coverImg.length > 10;
+  const hasImg = entry.cover_img && entry.cover_img.length > 10;
   const { handlers, style: hvStyle, cardRef } = useCardHover();
 
   return (
@@ -239,7 +239,7 @@ function QuoteCard({ entry, onClick, P }) {
 
 function PhotoCard({ entry, onClick, P }) {
   const m = getSectionMeta(P).Photos;
-  const hasImg = entry.photoImg && entry.photoImg.length > 10;
+  const hasImg = entry.photo_img && entry.photo_img.length > 10;
   const { handlers, style: hvStyle, cardRef } = useCardHover();
   return (
     <div ref={cardRef} onClick={onClick} {...handlers} style={{
@@ -250,7 +250,7 @@ function PhotoCard({ entry, onClick, P }) {
       ...hvStyle,
     }}>
       {hasImg
-        ? <img src={entry.photoImg} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+        ? <img src={entry.photo_img} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
         : (
           <div style={{ width: "100%", height: "100%", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 12 }}>
             <span style={{ fontSize: 52, color: `${m.color}33` }}>{m.icon}</span>
@@ -317,7 +317,7 @@ function EntryCard({ entry, onClick, compact = false, P, index = 0 }) {
 }
 
 // ─── DETAIL MODAL ─────────────────────────────────────────────────────────────
-function DetailModal({ entry, onClose, onDelete, P }) {
+function DetailModal({ entry, onClose, onDelete, P, hasToken }) {
   const m = getSectionMeta(P)[entry.type];
   return (
     <div style={{ position: "fixed", inset: 0, zIndex: 300, background: "rgba(30,46,48,0.6)", backdropFilter: "blur(8px)", display: "flex", alignItems: "center", justifyContent: "center", padding: 20 }}
@@ -332,8 +332,8 @@ function DetailModal({ entry, onClose, onDelete, P }) {
         <Corner color={m.color} size={52} />
         <Corner color={m.color} size={52} flip />
 
-        {(entry.coverImg || entry.photoImg) && (entry.coverImg || entry.photoImg).length > 10 && (
-          <img src={entry.coverImg || entry.photoImg} alt="" style={{ width: "100%", height: 320, objectFit: "cover", borderRadius: "14px 14px 0 0", opacity: 1 }} />
+        {(entry.cover_img || entry.photo_img) && (entry.cover_img || entry.photo_img).length > 10 && (
+          <img src={entry.cover_img || entry.photo_img} alt="" style={{ width: "100%", height: 320, objectFit: "cover", borderRadius: "14px 14px 0 0", opacity: 1 }} />
         )}
 
         <div style={{ padding: "32px 36px 36px" }}>
@@ -386,8 +386,8 @@ function AddModal({ defaultType, onClose, onSave, P }) {
   const [body, setBody] = useState("");
   const [tags, setTags] = useState("");
   const [date, setDate] = useState(new Date().toISOString().slice(0, 10));
-  const [coverImg, setCoverImg] = useState("");
-  const [photoImg, setPhotoImg] = useState("");
+  const [cover_img, setCoverImg] = useState("");
+  const [photo_img, setPhotoImg] = useState("");
   const coverRef = useRef();
   const photoRef = useRef();
   const m = getSectionMeta(P)[type];
@@ -402,7 +402,7 @@ function AddModal({ defaultType, onClose, onSave, P }) {
 
   const save = () => {
     if (!title.trim() || !body.trim()) return;
-    onSave({ id: Date.now().toString(), type, title: title.trim(), author: author.trim() || undefined, source: source.trim() || undefined, url: url.trim() || undefined, rating: rating || undefined, body: body.trim(), tags: tags.split(",").map(t => t.trim()).filter(Boolean), date, coverImg: coverImg || "", photoImg: photoImg || "" });
+    onSave({ id: Date.now().toString(), type, title: title.trim(), author: author.trim() || undefined, source: source.trim() || undefined, url: url.trim() || undefined, rating: rating || undefined, body: body.trim(), tags: tags.split(",").map(t => t.trim()).filter(Boolean), date, cover_img: cover_img || "", photo_img: photo_img || "" });
     onClose();
   };
 
@@ -453,8 +453,8 @@ function AddModal({ defaultType, onClose, onSave, P }) {
                   <button onClick={() => coverRef.current.click()} style={{ fontFamily: "'Tenor Sans', sans-serif", fontSize: 12, fontWeight: 600, padding: "9px 20px", border: `1.5px solid ${m.color}`, borderRadius: 20, background: "transparent", color: m.color, cursor: "pointer", transition: "all 0.15s" }}
                     onMouseEnter={e => { e.currentTarget.style.background = m.color; e.currentTarget.style.color = P.cream; }}
                     onMouseLeave={e => { e.currentTarget.style.background = "transparent"; e.currentTarget.style.color = m.color; }}
-                  >{coverImg ? "Change Cover ◈" : "Upload Cover ◈"}</button>
-                  {coverImg && <><img src={coverImg} alt="" style={{ height: 44, borderRadius: 6, border: `1.5px solid ${m.border}66` }} /><button onClick={() => setCoverImg("")} style={{ background: "none", border: "none", color: "#aaa", cursor: "pointer", fontSize: 14 }}>✕</button></>}
+                  >{cover_img ? "Change Cover ◈" : "Upload Cover ◈"}</button>
+                  {cover_img && <><img src={cover_img} alt="" style={{ height: 44, borderRadius: 6, border: `1.5px solid ${m.border}66` }} /><button onClick={() => setCoverImg("")} style={{ background: "none", border: "none", color: "#aaa", cursor: "pointer", fontSize: 14 }}>✕</button></>}
                 </div>
               </div>
             )}
@@ -467,8 +467,8 @@ function AddModal({ defaultType, onClose, onSave, P }) {
                   <button onClick={() => photoRef.current.click()} style={{ fontFamily: "'Tenor Sans', sans-serif", fontSize: 12, fontWeight: 600, padding: "9px 20px", border: `1.5px solid ${m.color}`, borderRadius: 20, background: "transparent", color: m.color, cursor: "pointer", transition: "all 0.15s" }}
                     onMouseEnter={e => { e.currentTarget.style.background = m.color; e.currentTarget.style.color = P.cream; }}
                     onMouseLeave={e => { e.currentTarget.style.background = "transparent"; e.currentTarget.style.color = m.color; }}
-                  >{photoImg ? "Change Photo ◫" : "Upload Photo ◫"}</button>
-                  {photoImg && <img src={photoImg} alt="" style={{ height: 48, borderRadius: 6, border: `1.5px solid ${m.border}66` }} />}
+                  >{photo_img ? "Change Photo ◫" : "Upload Photo ◫"}</button>
+                  {photo_img && <img src={photo_img} alt="" style={{ height: 48, borderRadius: 6, border: `1.5px solid ${m.border}66` }} />}
                 </div>
               </div>
             )}
@@ -705,7 +705,7 @@ function AboutPage({ P }) {
 }
 
 // ─── LOGIN PAGE ───────────────────────────────────────────────────────────────
-function LoginPage({ onLoginSuccess, P }) {
+function LoginPage({ onLoginSuccess, P, apiUrl }) {
   const [isSignUp, setIsSignUp] = useState(false);
   const [email, setEmail] = useState("");
   const [username, setUsername] = useState("");
@@ -720,7 +720,7 @@ function LoginPage({ onLoginSuccess, P }) {
     try {
       if (isSignUp) {
         // Register API call
-        const res = await fetch("http://localhost:8000/auth/register", {
+        const res = await fetch(`${apiUrl}/auth/register`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ email, username, password }),
@@ -745,7 +745,7 @@ function LoginPage({ onLoginSuccess, P }) {
   };
 
   const login = async (loginEmail, loginPassword) => {
-    const res = await fetch("http://localhost:8000/auth/login", {
+    const res = await fetch(`${apiUrl}/auth/login`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ email: loginEmail, password: loginPassword }),
@@ -1045,7 +1045,7 @@ export default function App() {
             : page === "About"
               ? <AboutPage P={P} />
               : page === "Login"
-                ? <LoginPage onLoginSuccess={() => setPage("Home")} P={P} />
+                ? <LoginPage onLoginSuccess={() => setPage("Home")} P={P} apiUrl={API_URL} />
                 : <SectionPage section={page} entries={entries.filter(e => e.type === page)} onAdd={() => openAdd(page)} onSelect={e => setModal(e)} P={P} />
           }
         </main>
