@@ -905,6 +905,7 @@ export default function App() {
     (window.location.hostname.includes("localhost") || window.location.hostname.includes("127.0.0.1")
       ? "http://localhost:8000"
       : "https://a-room-of-one-s-own.onrender.com");
+  console.log("Current API_URL:", API_URL);
 
   const fetchEntries = async () => {
     const token = localStorage.getItem("cabinet_token");
