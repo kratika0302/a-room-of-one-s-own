@@ -388,9 +388,69 @@ function AddModal({ defaultType, onClose, onSave, P }) {
   const [date, setDate] = useState(new Date().toISOString().slice(0, 10));
   const [cover_img, setCoverImg] = useState("");
   const [photo_img, setPhotoImg] = useState("");
+  const [searchQuery, setSearchQuery] = useState("");
+  const [searchResults, setSearchResults] = useState([]);
+  const [searching, setSearching] = useState(false);
+
   const coverRef = useRef();
   const photoRef = useRef();
   const m = getSectionMeta(P)[type];
+
+  const tmdbKey = import.meta.env.VITE_TMDB_API_KEY;
+
+  const searchMovies = async (q) => {
+    if (!q || !tmdbKey) return;
+    setSearching(true);
+    try {
+      const res = await fetch(`https://api.themoviedb.org/3/search/movie?api_key=${tmdbKey}&query=${encodeURIComponent(q)}`);
+      const data = await res.json();
+      setSearchResults(data.results.slice(0, 5).map(m => ({
+        id: m.id,
+        title: m.title,
+        year: m.release_date?.split("-")[0],
+        description: m.overview,
+        poster: m.poster_path ? `https://image.tmdb.org/t/p/w500${m.poster_path}` : "",
+        type: "Movies"
+      })));
+    } catch (e) { console.error(e); }
+    setSearching(false);
+  };
+
+  const searchBooks = async (q) => {
+    if (!q) return;
+    setSearching(true);
+    try {
+      const res = await fetch(`https://openlibrary.org/search.json?q=${encodeURIComponent(q)}&limit=5`);
+      const data = await res.json();
+      setSearchResults(data.docs.map(b => ({
+        id: b.key,
+        title: b.title,
+        author: b.author_name?.[0],
+        description: b.first_sentence?.[0] || "",
+        poster: b.cover_i ? `https://covers.openlibrary.org/b/id/${b.cover_i}-L.jpg` : "",
+        type: "Books"
+      })));
+    } catch (e) { console.error(e); }
+    setSearching(false);
+  };
+
+  const handleSearch = (e) => {
+    if (e.key !== "Enter") return;
+    if (type === "Movies") searchMovies(searchQuery);
+    if (type === "Books") searchBooks(searchQuery);
+  };
+
+  const selectResult = (res) => {
+    setTitle(res.title);
+    if (res.type === "Movies") setBody(res.description || "");
+    if (res.type === "Books") {
+      setAuthor(res.author || "");
+      // OpenLibrary search summary is usually thin, keeping body empty for user review
+    }
+    setCoverImg(res.poster || "");
+    setSearchResults([]);
+    setSearchQuery("");
+  };
 
   const handleImg = (e, setter) => {
     const file = e.target.files[0];
@@ -431,12 +491,68 @@ function AddModal({ defaultType, onClose, onSave, P }) {
             {SECTIONS.map(t => {
               const tm = getSectionMeta(P)[t];
               return (
-                <button key={t} onClick={() => setType(t)} style={{ fontFamily: "'Tenor Sans', sans-serif", fontSize: 11, letterSpacing: 1.5, textTransform: "uppercase", fontWeight: 600, padding: "6px 14px", borderRadius: 20, border: `1.5px solid ${type === t ? tm.color : tm.border + "55"}`, background: type === t ? `${tm.color}15` : "transparent", color: type === t ? tm.color : `${tm.color}77`, cursor: "pointer", transition: "all 0.15s" }}>
+                <button key={t} onClick={() => { setType(t); setSearchResults([]); setSearchQuery(""); }} style={{ fontFamily: "'Tenor Sans', sans-serif", fontSize: 11, letterSpacing: 1.5, textTransform: "uppercase", fontWeight: 600, padding: "6px 14px", borderRadius: 20, border: `1.5px solid ${type === t ? tm.color : tm.border + "55"}`, background: type === t ? `${tm.color}15` : "transparent", color: type === t ? tm.color : `${tm.color}77`, cursor: "pointer", transition: "all 0.15s" }}>
                   {t}
                 </button>
               );
             })}
           </div>
+
+          {(type === "Movies" || type === "Books") && (
+            <div style={{ marginBottom: 24 }}>
+              <label style={lbl}>Search {type}</label>
+              <div style={{ display: "flex", gap: 10 }}>
+                <input
+                  style={{ ...inp, color: P.theme === "dark" ? "#1a1a1a" : "#EDA35A" }}
+                  value={searchQuery}
+                  onChange={e => setSearchQuery(e.target.value)}
+                  onKeyDown={handleSearch}
+                  placeholder={`Search for a ${type.slice(0, -1)}...`}
+                />
+                <button
+                  onClick={() => type === "Movies" ? searchMovies(searchQuery) : searchBooks(searchQuery)}
+                  style={{ background: m.color, color: P.cream, border: "none", borderRadius: 8, padding: "0 18px", cursor: "pointer", fontFamily: "'Tenor Sans', sans-serif", fontSize: 12, fontWeight: 600 }}
+                >
+                  {searching ? "..." : "Search"}
+                </button>
+              </div>
+
+              {searchResults.length > 0 && (
+                <div style={{
+                  marginTop: 12,
+                  display: "flex",
+                  flexDirection: "column",
+                  gap: 8,
+                  background: P.theme === "dark" ? "rgba(255,255,255,0.05)" : "rgba(0,0,0,0.03)",
+                  borderRadius: 12,
+                  padding: 10,
+                  maxHeight: 300,
+                  overflowY: "auto",
+                  border: `1px solid ${m.border}33`,
+                  position: "relative",
+                  zIndex: 10
+                }}>
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 4, padding: "0 4px" }}>
+                    <span style={{ fontSize: 10, color: m.color, fontWeight: 700, textTransform: "uppercase", letterSpacing: 1 }}>Results</span>
+                    <button onClick={() => setSearchResults([])} style={{ background: "none", border: "none", color: m.color, cursor: "pointer", fontSize: 10, fontWeight: 700 }}>Clear</button>
+                  </div>
+                  {searchResults.map(r => (
+                    <div key={r.id} onClick={() => selectResult(r)} style={{ display: "flex", gap: 12, padding: 8, borderRadius: 8, cursor: "pointer", background: P.cream, border: `1px solid ${m.border}22`, transition: "all 0.2s" }}
+                      onMouseEnter={e => { e.currentTarget.style.borderColor = m.color; e.currentTarget.style.background = `${m.color}08`; }}
+                      onMouseLeave={e => { e.currentTarget.style.borderColor = `${m.border}22`; e.currentTarget.style.background = P.cream; }}
+                    >
+                      {r.poster ? <img src={r.poster} alt="" style={{ width: 40, height: 60, objectFit: "cover", borderRadius: 4 }} /> : <div style={{ width: 40, height: 60, background: `${m.color}11`, borderRadius: 4 }} />}
+                      <div style={{ display: "flex", flexDirection: "column", justifyContent: "center" }}>
+                        <div style={{ fontSize: 13, fontWeight: 600, color: P.theme === "dark" ? "#EEE" : "#EDA35A" }}>{r.title}</div>
+                        <div style={{ fontSize: 11, color: m.color, opacity: 0.8 }}>{r.year || r.author}</div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+              {searching && <div style={{ marginTop: 10, textAlign: "center", fontSize: 12, color: m.color, fontStyle: "italic" }}>Searching...</div>}
+            </div>
+          )}
 
           <div style={{ display: "flex", flexDirection: "column", gap: 15 }}>
             <div><label style={lbl}>Title *</label><input style={{ ...inp, color: P.theme === "dark" ? "#1a1a1a" : "#EDA35A" }} value={title} onChange={e => setTitle(e.target.value)} placeholder="Title…" /></div>
@@ -903,7 +1019,7 @@ export default function App() {
   const P = themeName === "light" ? LIGHT_P : DARK_P;
   const RAW_API_URL = import.meta.env.VITE_API_URL ||
     (window.location.hostname.includes("localhost") || window.location.hostname.includes("127.0.0.1")
-      ? "http://localhost:8000"
+      ? "http://127.0.0.1:8000"
       : "https://a-room-of-one-s-own.onrender.com");
 
   // Sanitize API_URL: Remove trailing slash if present
