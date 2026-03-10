@@ -170,7 +170,18 @@ function MovieBookCard({ entry, onClick, compact = false, P }) {
     }}>
       <Corner color={m.color} size={compact ? 32 : 44} />
       <Corner color={m.color} size={compact ? 32 : 44} flip />
-      {hasImg && <img src={entry.cover_img} alt="" style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover", opacity: 1 }} />}
+      {hasImg && (
+        <img
+          src={entry.cover_img}
+          alt=""
+          onError={(e) => {
+            console.warn("Image load failed, falling back to styled background:", entry.cover_img);
+            e.target.style.display = "none";
+            e.target.parentElement.style.background = P.theme === "dark" ? m.bg : `linear-gradient(160deg, ${m.bg} 0%, ${P.cream} 100%)`;
+          }}
+          style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover", opacity: 1 }}
+        />
+      )}
       <div style={{
         position: "relative", zIndex: 1,
         padding: compact ? "18px 16px" : "32px 28px",
