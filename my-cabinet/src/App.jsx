@@ -399,10 +399,20 @@ function AddModal({ defaultType, onClose, onSave, P }) {
   const tmdbKey = import.meta.env.VITE_TMDB_API_KEY;
 
   const searchMovies = async (q) => {
-    if (!q || !tmdbKey) return;
+    if (!q) return;
+    if (!tmdbKey) {
+      console.error("TMDB search failed: VITE_TMDB_API_KEY is missing. Ensure it's set in Render Environment and you've triggered a 'Clear Build Cache & Deploy'.");
+      return;
+    }
     setSearching(true);
+    setSearchResults([]);
     try {
-      const res = await fetch(`https://api.themoviedb.org/3/search/movie?api_key=${tmdbKey}&query=${encodeURIComponent(q)}`);
+      const url = `https://api.themoviedb.org/3/search/movie?api_key=${tmdbKey}&query=${encodeURIComponent(q)}`;
+      const res = await fetch(url);
+      if (!res.ok) {
+        const errData = await res.json();
+        throw new Error(`TMDB API Error: ${res.status} - ${errData.status_message || res.statusText}`);
+      }
       const data = await res.json();
       setSearchResults(data.results.slice(0, 5).map(m => ({
         id: m.id,
@@ -412,25 +422,36 @@ function AddModal({ defaultType, onClose, onSave, P }) {
         poster: m.poster_path ? `https://image.tmdb.org/t/p/w500${m.poster_path}` : "",
         type: "Movies"
       })));
-    } catch (e) { console.error(e); }
+    } catch (e) {
+      console.error("Search Movies Failed:", e.message);
+      alert(`Search failed: ${e.message}`);
+    }
     setSearching(false);
   };
 
   const searchBooks = async (q) => {
     if (!q) return;
     setSearching(true);
+    setSearchResults([]);
     try {
-      const res = await fetch(`https://openlibrary.org/search.json?q=${encodeURIComponent(q)}&limit=5`);
+      // Use https explicitly and limit to 5
+      const url = `https://openlibrary.org/search.json?q=${encodeURIComponent(q)}&limit=5`;
+      const res = await fetch(url);
+      if (!res.ok) throw new Error(`OpenLibrary API Error: ${res.status}`);
       const data = await res.json();
       setSearchResults(data.docs.map(b => ({
         id: b.key,
         title: b.title,
         author: b.author_name?.[0],
         description: b.first_sentence?.[0] || "",
+        // Trying direct covers.openlibrary.org which might have better SSL than archive.org subdomains
         poster: b.cover_i ? `https://covers.openlibrary.org/b/id/${b.cover_i}-L.jpg` : "",
         type: "Books"
       })));
-    } catch (e) { console.error(e); }
+    } catch (e) {
+      console.error("Search Books Failed:", e.message);
+      alert(`Search failed: ${e.message}`);
+    }
     setSearching(false);
   };
 
