@@ -407,7 +407,7 @@ function AddModal({ defaultType, onClose, onSave, P }) {
   const photoRef = useRef();
   const m = getSectionMeta(P)[type];
 
-  const tmdbKey = import.meta.env.VITE_TMDB_API_KEY;
+  const tmdbKey = import.meta.env.VITE_TMDB_API_KEY || "078d1fa2cdea5bef6ddeb2725ebf13c4";
 
   const searchMovies = async (q) => {
     if (!q) return;
